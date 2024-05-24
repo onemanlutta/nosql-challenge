@@ -1,10 +1,10 @@
 # NoSQL Challenge: UK Food Standards Database
 
-An ETL pipeline extracting data from json file format to MongoDB NoSQL in Python for the purpose of modeling data for an Eat Safe, Love, food magazine. The aim is to evaluate some ratings data in UK from the UK Food Standards Agency to help their journalists and critics decide where to focus future articles.
+# Eat Safe, Love Project
 
 ## Overview
 
-This project involves setting up and working with a MongoDB NoSQL database to analyze food hygiene ratings in the UK. The project is divided into three parts:
+This ETL pipeline project involves setting up and working with a MongoDB NoSQL database to analyze food hygiene ratings in the UK. The project is divided into three parts:
 
 1. **Database and Jupyter Notebook Set Up**
 2. **Update the Database**
@@ -14,164 +14,53 @@ This project involves setting up and working with a MongoDB NoSQL database to an
 
 - MongoDB installed and running on your local machine.
 - Python environment with necessary packages (`pymongo`, `pandas`, `pprint`).
-- Jupyter Notebook for running the provided starter files.
+- Jupyter Notebook.
 
-# The Task
-## Getting Started
+## 1. Project Summary
 
-1. **Clone the Repository**:
-    ```sh
-    git clone https://github.com/yourusername/nosql-challenge.git
-    cd nosql-challenge
-    ```
+The Eat Safe, Love project focuses on managing and analyzing restaurant inspection data from the UK using MongoDB and Python. The project involves importing raw data, performing data manipulation and analysis tasks, and presenting insights into restaurant hygiene and ratings.
 
-2. **Download the Resources**:
-    - Place `establishments.json` in the `Resources` folder.
+## 2. Objectives of Each Task/Steps
 
-3. **Import Data into MongoDB**:
-    - Use the following command to import the data:
-    ```sh
-    mongoimport --db uk_food --collection establishments --drop --file Resources/establishments.json --jsonArray
-    ```
+### Data Import and Setup
+- **Import Data**: Import restaurant inspection data from `establishments.json` into MongoDB.
+  
+### Database Operations
+- **Add New Restaurant**: Introduce "Penang Flavours" as a new restaurant in the database.
+- **Update BusinessTypeID**: Identify and update the BusinessTypeID for "Restaurant/Cafe/Canteen".
 
-4. **Open Jupyter Notebook**:
-    - Start Jupyter Notebook and open `NoSQL_setup_starter.ipynb` and `NoSQL_analysis_starter.ipynb`.
+### Data Analysis
+- **Query Tasks**: Conduct specific queries to find establishments with hygiene scores of 20, high-rated establishments in London, and top-rated establishments near "Penang Flavours".
+- **Data Conversion**: Convert data types and ensure numerical accuracy for coordinates and rating values.
+- **Data Presentation**: Utilize Pandas DataFrames to visualize and explore findings.
 
-## Part 1: Database and Jupyter Notebook Set Up
+## 3. Project Files
 
-### Steps
+### Structure
 
-1. **Import Libraries**:
-    ```python
-    from pymongo import MongoClient
-    from pprint import pprint
-    ```
+- **Resources/**
+  - **establishments.json**: JSON file containing raw data of restaurant inspection records.
+- **NoSQL_analysis_starter.ipynb**: Jupyter notebook for performing data manipulation, querying, and analysis.
+- **NoSQL_setup_starter.ipynb**: Jupyter notebook for setting up the database, importing data, and performing initial exploration and setup tasks.
+- **README.md**: Markdown file containing project overview, objectives, tasks, findings, and disclaimer.
 
-2. **Create Mongo Client and Verify Database**:
-    ```python
-    client = MongoClient('mongodb://localhost:27017/')
-    db = client['uk_food']
-    collection = db['establishments']
-    ```
 
-3. **Check Database and Collection**:
-    ```python
-    print(client.list_database_names())
-    print(db.list_collection_names())
-    pprint(collection.find_one())
-    ```
+## 4. Methods Used
 
-## Part 2: Update the Database
+- **MongoDB**: Database management for storing and querying restaurant inspection data.
+- **Python (pymongo)**: Scripting language for data manipulation, querying MongoDB, and data analysis.
+- **Pandas**: Data manipulation and analysis library for presenting insights.
 
-### Steps
+## 5. Overview of Findings
 
-1. **Add New Restaurant**:
-    ```python
-    new_restaurant = {
-        "BusinessName": "Penang Flavours",
-        "BusinessType": "Restaurant/Cafe/Canteen",
-        "BusinessTypeID": "",
-        "AddressLine1": "Penang Flavours",
-        "AddressLine2": "146A Plumstead Rd",
-        "AddressLine3": "London",
-        "AddressLine4": "",
-        "PostCode": "SE18 7DY",
-        "Phone": "",
-        "LocalAuthorityCode": "511",
-        "LocalAuthorityName": "Greenwich",
-        "LocalAuthorityWebSite": "http://www.royalgreenwich.gov.uk",
-        "LocalAuthorityEmailAddress": "health@royalgreenwich.gov.uk",
-        "scores": {
-            "Hygiene": "",
-            "Structural": "",
-            "ConfidenceInManagement": ""
-        },
-        "SchemeType": "FHRS",
-        "geocode": {
-            "longitude": "0.08384000",
-            "latitude": "51.49014200"
-        },
-        "RightToReply": "",
-        "Distance": 4623.9723280747176,
-        "NewRatingPending": True
-    }
-    collection.insert_one(new_restaurant)
-    ```
+The project reveals insights into restaurant hygiene and ratings across different regions in the UK. Key findings include:
+- Identification of establishments with specific hygiene scores.
+- Analysis of highly-rated establishments in London.
+- Top-rated establishments near "Penang Flavours" based on proximity and hygiene scores.
 
-2. **Update BusinessTypeID**:
-    ```python
-    result = collection.find_one({"BusinessType": "Restaurant/Cafe/Canteen"}, {"BusinessTypeID": 1, "BusinessType": 1})
-    business_type_id = result['BusinessTypeID']
-    collection.update_one(
-        {"BusinessName": "Penang Flavours"},
-        {"$set": {"BusinessTypeID": business_type_id}}
-    )
-    ```
+## 6. Disclaimer
 
-3. **Remove Dover Establishments**:
-    ```python
-    dover_count = collection.count_documents({"LocalAuthorityName": "Dover"})
-    print(dover_count)
-    collection.delete_many({"LocalAuthorityName": "Dover"})
-    new_dover_count = collection.count_documents({"LocalAuthorityName": "Dover"})
-    print(new_dover_count)
-    ```
-
-4. **Convert Data Types**:
-    ```python
-    collection.update_many({}, [{'$set': {'geocode.latitude': {'$toDouble': '$geocode.latitude'}, 'geocode.longitude': {'$toDouble': '$geocode.longitude'}}}])
-    collection.update_many({}, [{'$set': {'RatingValue': {'$toInt': '$RatingValue'}}}], upsert=False)
-    ```
-
-## Part 3: Exploratory Analysis
-
-### Steps
-
-1. **Hygiene Score Equal to 20**:
-    ```python
-    query = {"scores.Hygiene": 20}
-    count = collection.count_documents(query)
-    print(count)
-    result = collection.find(query)
-    df = pd.DataFrame(result)
-    print(df.head(10))
-    ```
-
-2. **RatingValue ≥ 4 in London**:
-    ```python
-    query = {"LocalAuthorityName": {"$regex": "London"}, "RatingValue": {"$gte": 4}}
-    count = collection.count_documents(query)
-    print(count)
-    result = collection.find(query)
-    df = pd.DataFrame(result)
-    print(df.head(10))
-    ```
-
-3. **Top 5 Establishments Near "Penang Flavours"**:
-    ```python
-    latitude = 51.49014200
-    longitude = 0.08384000
-    query = {
-        "geocode.latitude": {"$gte": latitude - 0.01, "$lte": latitude + 0.01},
-        "geocode.longitude": {"$gte": longitude - 0.01, "$lte": longitude + 0.01},
-        "RatingValue": 5
-    }
-    result = collection.find(query).sort("scores.Hygiene", 1).limit(5)
-    df = pd.DataFrame(result)
-    print(df.head(10))
-    ```
-
-4. **Hygiene Score of 0 by Local Authority**:
-    ```python
-    pipeline = [
-        {"$match": {"scores.Hygiene": 0}},
-        {"$group": {"_id": "$LocalAuthorityName", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}}
-    ]
-    result = collection.aggregate(pipeline)
-    df = pd.DataFrame(list(result))
-    print(df.head(10))
-    ```
+The data used in this project is sourced from public records and may be subject to updates or inaccuracies. The findings and analysis are based on the available dataset and should be interpreted with consideration for any limitations or changes in data over time.
 
 # References
 UK Food Standards AgencyLinks to an external site. (2022). UK food hygiene rating data API. https://ratings.food.gov.uk/open-data/en-GBLinks to an external site.. Contains public sector information licensed under the Open Government Licence v3.0Links to an external site.
